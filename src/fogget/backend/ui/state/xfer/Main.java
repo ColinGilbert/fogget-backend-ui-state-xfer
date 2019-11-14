@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +29,7 @@ import noob.plantsystem.common.ArduinoProxy;
 public class Main {
 
     public static ArrayList<ArduinoProxy> proxies = new ArrayList<>();
+    private static final AtomicBoolean isBeingWrittenTo = new AtomicBoolean(false);
 
     public static void main(String[] args) {
         // TODO code application logic here
@@ -47,20 +49,24 @@ public class Main {
                 inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
                 DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
                 String clientMessage = inFromClient.readLine();
-                ObjectMapper mapper = new ObjectMapper();
-                if (clientMessage.equals("PUT")) {
-                    String data = inFromClient.readLine();
-                    try {
-                        proxies = mapper.readValue(data, new TypeReference<ArrayList<ArduinoProxy>>() {
-                        });
-                    } catch (JsonProcessingException ex) {
-                        Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                        continue;
+                if (!isBeingWrittenTo.get()) {
+
+                    ObjectMapper mapper = new ObjectMapper();
+                    if (clientMessage.equals("PUT")) {
+
+                        String data = inFromClient.readLine();
+                        try {
+                            proxies = mapper.readValue(data, new TypeReference<ArrayList<ArduinoProxy>>() {
+                            });
+                        } catch (JsonProcessingException ex) {
+                            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                            continue;
+                        }
+                    } else if (clientMessage.equals("GET")) {
+                        outToClient.writeBytes(mapper.writeValueAsString(proxies));
+                    } else {
+                        System.out.println("Received: " + clientMessage);
                     }
-                } else if (clientMessage.equals("GET")) {
-                    outToClient.writeBytes(mapper.writeValueAsString(proxies));
-                } else {
-                    System.out.println("Received: " + clientMessage);
                 }
             } catch (IOException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
