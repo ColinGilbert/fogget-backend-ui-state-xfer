@@ -50,8 +50,9 @@ public class Main {
         long lastTime = System.currentTimeMillis();
         while (true) {
             BufferedReader inFromClient = null;
+            Socket connectionSocket = null;
             try {
-                Socket connectionSocket = welcomeSocket.accept();
+                connectionSocket = welcomeSocket.accept();
                 inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
                 DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
                 String clientMessage = inFromClient.readLine();
@@ -77,8 +78,8 @@ public class Main {
                         }
                         case "PUTEVENTS": {
                             String data = inFromClient.readLine();
-                           events.clear();
-                           events = mapper.readValue(data, new TypeReference<TreeMap<Long, ArrayDeque<EventRecord>>>() {
+                            events.clear();
+                            events = mapper.readValue(data, new TypeReference<TreeMap<Long, ArrayDeque<EventRecord>>>() {
                             });
                             break;
                         }
@@ -94,7 +95,7 @@ public class Main {
                             break;
                         }
                         case "GETDESCRIPTIONS": {
-                            outToClient.writeBytes(mapper.writeValueAsString(events));
+                            outToClient.writeBytes(mapper.writeValueAsString(descriptions));
                             break;
                         }
                         default: {
@@ -107,11 +108,17 @@ public class Main {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (Exception ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             } finally {
                 try {
+                    connectionSocket.close();
                     inFromClient.close();
                 } catch (IOException ex) {
                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (Exception ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+
                 }
             }
         }
