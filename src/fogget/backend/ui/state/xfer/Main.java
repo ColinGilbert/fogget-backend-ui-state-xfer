@@ -30,16 +30,16 @@ import noob.plantsystem.common.EventRecord;
  * @author noob
  */
 public class Main {
+
     public static TreeMap<Long, ArduinoProxy> proxies = new TreeMap<>();
     public static TreeMap<Long, ArrayDeque<EventRecord>> events = new TreeMap<>();
-    public static TreeMap<Long, String> eventDescriptions = new TreeMap<>();
+    public static TreeMap<Long, String> descriptions = new TreeMap<>();
     public static TreeMap<Long, ArduinoConfigChangeRepresentation> configChanges = new TreeMap<>();
-    
+    final static protected long timeOut = 1000;
     private static final AtomicBoolean isBeingWrittenTo = new AtomicBoolean(false);
 
     public static void main(String[] args) {
         // TODO code application logic here
-
         ServerSocket welcomeSocket;
         try {
             welcomeSocket = new ServerSocket(6777);
@@ -47,7 +47,7 @@ public class Main {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             return;
         }
-
+        long lastTime = System.currentTimeMillis();
         while (true) {
             BufferedReader inFromClient = null;
             try {
@@ -56,47 +56,51 @@ public class Main {
                 DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
                 String clientMessage = inFromClient.readLine();
                 if (!isBeingWrittenTo.get()) {
+                    final long currentTime = System.currentTimeMillis();
+                    final long deltaT = currentTime - lastTime;
+                    if (deltaT > timeOut) {
+                        System.out.println("No more information. :(");
+                    }
+                    lastTime = currentTime;
                     ObjectMapper mapper = new ObjectMapper();
                     switch (clientMessage) {
                         case "PUTPROXIES": {
                             String data = inFromClient.readLine();
+                            proxies.clear();
                             proxies = mapper.readValue(data, new TypeReference<TreeMap<Long, ArduinoProxy>>() {
                             });
                             break;
                         }
-                        case "GETPROXIES":
+                        case "GETPROXIES": {
                             outToClient.writeBytes(mapper.writeValueAsString(proxies));
                             break;
+                        }
                         case "PUTEVENTS": {
                             String data = inFromClient.readLine();
-                            events = mapper.readValue(data, new TypeReference<TreeMap<Long, ArrayDeque<EventRecord>>>() {
+                           events.clear();
+                           events = mapper.readValue(data, new TypeReference<TreeMap<Long, ArrayDeque<EventRecord>>>() {
                             });
                             break;
                         }
-                        case "GETEVENTS":
+                        case "GETEVENTS": {
                             outToClient.writeBytes(mapper.writeValueAsString(events));
                             break;
-                        case "PUTCONFIGCHANGES": {
-                            String data = inFromClient.readLine();
-                            configChanges = mapper.readValue(data, new TypeReference<TreeMap<Long, ArduinoConfigChangeRepresentation>>() {
-                            });
-                            break;
                         }
-                        case "GETCONFIGCHANGES":
-                            outToClient.writeBytes(mapper.writeValueAsString(configChanges));
-                            break;
                         case "PUTDESCRIPTIONS": {
                             String data = inFromClient.readLine();
-                            eventDescriptions = mapper.readValue(data, new TypeReference<TreeMap<Long, String>>() {
+                            descriptions.clear();
+                            descriptions = mapper.readValue(data, new TypeReference<TreeMap<Long, String>>() {
                             });
                             break;
                         }
-                        case "DETDESCRIPTIONS":
+                        case "DETDESCRIPTIONS": {
                             outToClient.writeBytes(mapper.writeValueAsString(events));
                             break;
-                        default:
+                        }
+                        default: {
                             System.out.println("Received: " + clientMessage + ". Huh???");
                             break;
+                        }
                     }
                 }
             } catch (JsonProcessingException ex) {
