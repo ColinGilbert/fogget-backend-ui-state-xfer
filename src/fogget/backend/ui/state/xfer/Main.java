@@ -93,7 +93,7 @@ public class Main {
                             });
                             break;
                         }
-                        case "DETDESCRIPTIONS": {
+                        case "GETDESCRIPTIONS": {
                             outToClient.writeBytes(mapper.writeValueAsString(events));
                             break;
                         }
