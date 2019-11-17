@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import noob.plantsystem.common.ArduinoConfigChangeRepresentation;
 import noob.plantsystem.common.ArduinoProxy;
 import noob.plantsystem.common.EventRecord;
+import noob.plantsystem.common.PersistentArduinoState;
 
 /**
  *
@@ -34,12 +34,12 @@ public class Main {
     public static TreeMap<Long, ArduinoProxy> proxies = new TreeMap<>();
     public static TreeMap<Long, ArrayDeque<EventRecord>> events = new TreeMap<>();
     public static TreeMap<Long, String> descriptions = new TreeMap<>();
-    public static TreeMap<Long, ArduinoConfigChangeRepresentation> configChanges = new TreeMap<>();
-    final static protected long timeOut = 1000;
-    private static final AtomicBoolean isBeingWrittenTo = new AtomicBoolean(false);
+    public static TreeMap<Long, PersistentArduinoState> configChanges = new TreeMap<>();
+    final static Object proxyLock = new Object();
+    final static Object eventsLock = new Object();
+    final static Object descriptionsLock = new Object();
 
     public static void main(String[] args) {
-        // TODO code application logic here
         ServerSocket welcomeSocket;
         try {
             welcomeSocket = new ServerSocket(6777);
@@ -56,54 +56,74 @@ public class Main {
                 inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
                 DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
                 String clientMessage = inFromClient.readLine();
-                if (!isBeingWrittenTo.get()) {
-                    final long currentTime = System.currentTimeMillis();
-                    final long deltaT = currentTime - lastTime;
-                    if (deltaT > timeOut) {
-                        System.out.println("No more information. :(");
+                ObjectMapper mapper = new ObjectMapper();
+                switch (clientMessage) {
+                    case "PUTPROXIES": {
+
+                        String data = inFromClient.readLine();
+                        if (!"".equals(data)) {
+
+                            synchronized (proxyLock) {
+                                proxies.clear();
+                                proxies = mapper.readValue(data, new TypeReference<TreeMap<Long, ArduinoProxy>>() {
+                                });
+                            }
+                        }
+                        break;
+
                     }
-                    lastTime = currentTime;
-                    ObjectMapper mapper = new ObjectMapper();
-                    switch (clientMessage) {
-                        case "PUTPROXIES": {
-                            String data = inFromClient.readLine();
-                            proxies.clear();
-                            proxies = mapper.readValue(data, new TypeReference<TreeMap<Long, ArduinoProxy>>() {
-                            });
-                            break;
-                        }
-                        case "GETPROXIES": {
+                    case "GETPROXIES": {
+                        synchronized (proxyLock) {
                             outToClient.writeBytes(mapper.writeValueAsString(proxies));
-                            break;
                         }
-                        case "PUTEVENTS": {
-                            String data = inFromClient.readLine();
-                            events.clear();
-                            events = mapper.readValue(data, new TypeReference<TreeMap<Long, ArrayDeque<EventRecord>>>() {
-                            });
-                            break;
+                        break;
+
+                    }
+                    case "PUTEVENTS": {
+                        String data = inFromClient.readLine();
+                        if (!"".equals(data)) {
+                            synchronized (eventsLock) {
+                                events.clear();
+                                events = mapper.readValue(data, new TypeReference<TreeMap<Long, ArrayDeque<EventRecord>>>() {
+                                });
+                            }
                         }
-                        case "GETEVENTS": {
+                        break;
+
+                    }
+                    case "GETEVENTS": {
+                        synchronized (eventsLock) {
                             outToClient.writeBytes(mapper.writeValueAsString(events));
-                            break;
                         }
-                        case "PUTDESCRIPTIONS": {
-                            String data = inFromClient.readLine();
-                            descriptions.clear();
-                            descriptions = mapper.readValue(data, new TypeReference<TreeMap<Long, String>>() {
-                            });
-                            break;
+                        break;
+                    }
+                    case "PUTDESCRIPTIONS": {
+                        String data = inFromClient.readLine();
+                        if (!"".equals(data)) {
+
+                            synchronized (descriptionsLock) {
+                                descriptions.clear();
+                                descriptions = mapper.readValue(data, new TypeReference<TreeMap<Long, String>>() {
+                                });
+                            }
                         }
-                        case "GETDESCRIPTIONS": {
-                            outToClient.writeBytes(mapper.writeValueAsString(descriptions));
-                            break;
+                        break;
+                    }
+                    case "GETDESCRIPTIONS": {
+                        synchronized (descriptionsLock) {
                         }
-                        default: {
-                            System.out.println("Received: " + clientMessage + ". Huh???");
-                            break;
-                        }
+                        outToClient.writeBytes(mapper.writeValueAsString(descriptions));
+                        break;
+                    }
+                    default: {
+                        System.out.println("Received: " + clientMessage + ". Huh???");
+                        break;
                     }
                 }
+                // connectionSocket.shutdownInput();
+                // connectionSocket.shutdownOutput();
+                connectionSocket.close();
+
             } catch (JsonProcessingException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
@@ -113,12 +133,8 @@ public class Main {
             } finally {
                 try {
                     connectionSocket.close();
-                    inFromClient.close();
                 } catch (IOException ex) {
                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (Exception ex) {
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-
                 }
             }
         }
