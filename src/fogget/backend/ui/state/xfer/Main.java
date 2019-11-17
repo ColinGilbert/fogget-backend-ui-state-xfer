@@ -67,6 +67,7 @@ public class Main {
                                 proxies.clear();
                                 proxies = mapper.readValue(data, new TypeReference<TreeMap<Long, ArduinoProxy>>() {
                                 });
+                                proxyLock.notifyAll();
                             }
                         }
                         break;
@@ -75,6 +76,7 @@ public class Main {
                     case "GETPROXIES": {
                         synchronized (proxyLock) {
                             outToClient.writeBytes(mapper.writeValueAsString(proxies));
+                            proxyLock.notifyAll();
                         }
                         break;
 
@@ -83,9 +85,10 @@ public class Main {
                         String data = inFromClient.readLine();
                         if (!"".equals(data)) {
                             synchronized (eventsLock) {
-                                events.clear();
+                                // events.clear();
                                 events = mapper.readValue(data, new TypeReference<TreeMap<Long, ArrayDeque<EventRecord>>>() {
                                 });
+                                eventsLock.notifyAll();
                             }
                         }
                         break;
@@ -102,17 +105,19 @@ public class Main {
                         if (!"".equals(data)) {
 
                             synchronized (descriptionsLock) {
-                                descriptions.clear();
+                                // descriptions.clear();
                                 descriptions = mapper.readValue(data, new TypeReference<TreeMap<Long, String>>() {
                                 });
+                                descriptionsLock.notifyAll();
                             }
                         }
                         break;
                     }
                     case "GETDESCRIPTIONS": {
                         synchronized (descriptionsLock) {
-                        }
                         outToClient.writeBytes(mapper.writeValueAsString(descriptions));
+                        descriptionsLock.notifyAll();
+                        }
                         break;
                     }
                     default: {
