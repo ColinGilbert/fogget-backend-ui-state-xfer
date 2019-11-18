@@ -115,8 +115,8 @@ public class Main {
                     }
                     case (CommonValues.getDescriptionsForUI): {
                         synchronized (descriptionsLock) {
-                        outToClient.writeBytes(mapper.writeValueAsString(descriptions));
-                        descriptionsLock.notifyAll();
+                            outToClient.writeBytes(mapper.writeValueAsString(descriptions));
+                            descriptionsLock.notifyAll();
                         }
                         break;
                     }
@@ -125,10 +125,6 @@ public class Main {
                         break;
                     }
                 }
-                // connectionSocket.shutdownInput();
-                // connectionSocket.shutdownOutput();
-                connectionSocket.close();
-
             } catch (JsonProcessingException ex) {
                 Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
@@ -139,6 +135,8 @@ public class Main {
                 try {
                     connectionSocket.close();
                 } catch (IOException ex) {
+                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (Exception ex) {
                     Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
