@@ -43,7 +43,7 @@ public class Main {
     public static void main(String[] args) {
         ServerSocket welcomeSocket;
         try {
-            welcomeSocket = new ServerSocket(6777);
+            welcomeSocket = new ServerSocket(CommonValues.localUIPort);
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             return;
