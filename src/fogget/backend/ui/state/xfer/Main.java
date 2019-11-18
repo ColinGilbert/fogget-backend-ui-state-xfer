@@ -41,14 +41,13 @@ public class Main {
     final static Object descriptionsLock = new Object();
 
     public static void main(String[] args) {
-        ServerSocket welcomeSocket;
+        ServerSocket welcomeSocket = null;
         try {
             welcomeSocket = new ServerSocket(CommonValues.localUIPort);
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-            return;
+            System.exit(2);
         }
-        long lastTime = System.currentTimeMillis();
         while (true) {
             BufferedReader inFromClient = null;
             Socket connectionSocket = null;
