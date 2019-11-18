@@ -39,7 +39,9 @@ public class Main {
     final static Object proxyLock = new Object();
     final static Object eventsLock = new Object();
     final static Object descriptionsLock = new Object();
-
+    static Socket connectionSocket = null;
+    static BufferedReader inFromClient = null;
+    static DataOutputStream outToClient = null; 
     public static void main(String[] args) {
         ServerSocket welcomeSocket = null;
         try {
@@ -49,20 +51,16 @@ public class Main {
             System.exit(2);
         }
         while (true) {
-            BufferedReader inFromClient = null;
-            Socket connectionSocket = null;
             try {
                 connectionSocket = welcomeSocket.accept();
                 inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
-                DataOutputStream outToClient = new DataOutputStream(connectionSocket.getOutputStream());
+                outToClient = new DataOutputStream(connectionSocket.getOutputStream());
                 String clientMessage = inFromClient.readLine();
                 ObjectMapper mapper = new ObjectMapper();
                 switch (clientMessage) {
                     case (CommonValues.pushProxiesToUI): {
-
                         String data = inFromClient.readLine();
                         if (!"".equals(data)) {
-
                             synchronized (proxyLock) {
                                 proxies.clear();
                                 proxies = mapper.readValue(data, new TypeReference<TreeMap<Long, ArduinoProxy>>() {
