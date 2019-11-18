@@ -36,12 +36,16 @@ public class Main {
     public static TreeMap<Long, ArrayDeque<EventRecord>> events = new TreeMap<>();
     public static TreeMap<Long, String> descriptions = new TreeMap<>();
     public static TreeMap<Long, PersistentArduinoState> configChanges = new TreeMap<>();
+    public static ObjectMapper mapper = new ObjectMapper();
+
     final static Object proxyLock = new Object();
     final static Object eventsLock = new Object();
     final static Object descriptionsLock = new Object();
     static Socket connectionSocket = null;
     static BufferedReader inFromClient = null;
     static DataOutputStream outToClient = null; 
+    static String clientMessage = null;
+    static String data =  null;
     public static void main(String[] args) {
         ServerSocket welcomeSocket = null;
         try {
@@ -55,11 +59,10 @@ public class Main {
                 connectionSocket = welcomeSocket.accept();
                 inFromClient = new BufferedReader(new InputStreamReader(connectionSocket.getInputStream()));
                 outToClient = new DataOutputStream(connectionSocket.getOutputStream());
-                String clientMessage = inFromClient.readLine();
-                ObjectMapper mapper = new ObjectMapper();
+                clientMessage = inFromClient.readLine();
                 switch (clientMessage) {
                     case (CommonValues.pushProxiesToUI): {
-                        String data = inFromClient.readLine();
+                        data = inFromClient.readLine();
                         if (!"".equals(data)) {
                             synchronized (proxyLock) {
                                 proxies.clear();
@@ -80,10 +83,10 @@ public class Main {
 
                     }
                     case (CommonValues.pushEventsToUI): {
-                        String data = inFromClient.readLine();
+                        data = inFromClient.readLine();
                         if (!"".equals(data)) {
                             synchronized (eventsLock) {
-                                // events.clear();
+                                events.clear();
                                 events = mapper.readValue(data, new TypeReference<TreeMap<Long, ArrayDeque<EventRecord>>>() {
                                 });
                                 eventsLock.notifyAll();
@@ -99,11 +102,11 @@ public class Main {
                         break;
                     }
                     case (CommonValues.pushDescriptionsToUI): {
-                        String data = inFromClient.readLine();
+                        data = inFromClient.readLine();
                         if (!"".equals(data)) {
 
                             synchronized (descriptionsLock) {
-                                // descriptions.clear();
+                                descriptions.clear();
                                 descriptions = mapper.readValue(data, new TypeReference<TreeMap<Long, String>>() {
                                 });
                                 descriptionsLock.notifyAll();
