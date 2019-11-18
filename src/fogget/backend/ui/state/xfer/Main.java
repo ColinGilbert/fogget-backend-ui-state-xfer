@@ -22,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import noob.plantsystem.common.ArduinoProxy;
+import noob.plantsystem.common.CommonValues;
 import noob.plantsystem.common.EventRecord;
 import noob.plantsystem.common.PersistentArduinoState;
 
@@ -58,7 +59,7 @@ public class Main {
                 String clientMessage = inFromClient.readLine();
                 ObjectMapper mapper = new ObjectMapper();
                 switch (clientMessage) {
-                    case "PUTPROXIES": {
+                    case (CommonValues.pushProxiesToUI): {
 
                         String data = inFromClient.readLine();
                         if (!"".equals(data)) {
@@ -73,7 +74,7 @@ public class Main {
                         break;
 
                     }
-                    case "GETPROXIES": {
+                    case (CommonValues.getProxiesForUI): {
                         synchronized (proxyLock) {
                             outToClient.writeBytes(mapper.writeValueAsString(proxies));
                             proxyLock.notifyAll();
@@ -81,7 +82,7 @@ public class Main {
                         break;
 
                     }
-                    case "PUTEVENTS": {
+                    case (CommonValues.pushEventsToUI): {
                         String data = inFromClient.readLine();
                         if (!"".equals(data)) {
                             synchronized (eventsLock) {
@@ -94,13 +95,13 @@ public class Main {
                         break;
 
                     }
-                    case "GETEVENTS": {
+                    case (CommonValues.getEventsForUI): {
                         synchronized (eventsLock) {
                             outToClient.writeBytes(mapper.writeValueAsString(events));
                         }
                         break;
                     }
-                    case "PUTDESCRIPTIONS": {
+                    case (CommonValues.pushDescriptionsToUI): {
                         String data = inFromClient.readLine();
                         if (!"".equals(data)) {
 
@@ -113,7 +114,7 @@ public class Main {
                         }
                         break;
                     }
-                    case "GETDESCRIPTIONS": {
+                    case (CommonValues.getDescriptionsForUI): {
                         synchronized (descriptionsLock) {
                         outToClient.writeBytes(mapper.writeValueAsString(descriptions));
                         descriptionsLock.notifyAll();
