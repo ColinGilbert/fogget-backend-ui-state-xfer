@@ -8,7 +8,6 @@ package fogget.backend.ui.state.xfer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -17,10 +16,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayDeque;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import noob.plantsystem.common.ArduinoProxy;
 import noob.plantsystem.common.CommonValues;
 import noob.plantsystem.common.EventRecord;
@@ -47,13 +44,16 @@ public class Main {
     static String clientMessage = null;
     static String data =  null;
     public static void main(String[] args) {
+        
         ServerSocket welcomeSocket = null;
+        
         try {
             welcomeSocket = new ServerSocket(CommonValues.localUIPort);
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             System.exit(2);
         }
+        
         while (true) {
             try {
                 connectionSocket = welcomeSocket.accept();
