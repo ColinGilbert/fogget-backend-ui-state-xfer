@@ -21,28 +21,27 @@ import java.util.logging.Logger;
 import noob.plantsystem.common.EmbeddedSystemCombinedStateMemento;
 import noob.plantsystem.common.CommonValues;
 import noob.plantsystem.common.EventRecordMemento;
-//import noob.plantsystem.common.PersistentArduinoState;
+import noob.plantsystem.common.PersistentEmbeddedSystemStateMemento;
 
 /**
  *
  * @author noob
  */
-public class Main {
+public class UITransferAgent {
 
-    public static TreeMap<Long, EmbeddedSystemCombinedStateMemento> proxies = new TreeMap<>();
+    public static TreeMap<Long, EmbeddedSystemCombinedStateMemento> systems = new TreeMap<>();
     public static TreeMap<Long, ArrayDeque<EventRecordMemento>> events = new TreeMap<>();
     public static TreeMap<Long, String> descriptions = new TreeMap<>();
-    //public static TreeMap<Long, PersistentArduinoState> configChanges = new TreeMap<>();
     public static ObjectMapper mapper = new ObjectMapper();
-
-    final static Object proxyLock = new Object();
-    final static Object eventsLock = new Object();
-    final static Object descriptionsLock = new Object();
-    static Socket connectionSocket = null;
-    static BufferedReader inFromClient = null;
-    static DataOutputStream outToClient = null; 
-    static String clientMessage = null;
-    static String data =  null;
+    protected final static Object systemsLock = new Object();
+    protected final static Object eventsLock = new Object();
+    protected final static Object descriptionsLock = new Object();
+    protected  static Socket connectionSocket = null;
+    protected  static BufferedReader inFromClient = null;
+    protected  static DataOutputStream outToClient = null; 
+    protected  static String clientMessage = null;
+    protected  static String data =  null;
+    
     public static void main(String[] args) {
         
         ServerSocket welcomeSocket = null;
@@ -50,7 +49,7 @@ public class Main {
         try {
             welcomeSocket = new ServerSocket(CommonValues.localUIPort);
         } catch (IOException ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(UITransferAgent.class.getName()).log(Level.SEVERE, null, ex);
             System.exit(2);
         }
         
@@ -64,20 +63,20 @@ public class Main {
                     case (CommonValues.pushSystemsToUI): {
                         data = inFromClient.readLine();
                         if (!"".equals(data)) {
-                            synchronized (proxyLock) {
-                                proxies.clear();
-                                proxies = mapper.readValue(data, new TypeReference<TreeMap<Long, EmbeddedSystemCombinedStateMemento>>() {
+                            synchronized (systemsLock) {
+                                systems.clear();
+                                systems = mapper.readValue(data, new TypeReference<TreeMap<Long, EmbeddedSystemCombinedStateMemento>>() {
                                 });
-                                proxyLock.notifyAll();
+                                systemsLock.notifyAll();
                             }
                         }
                         break;
 
                     }
                     case (CommonValues.getSystemsForUI): {
-                        synchronized (proxyLock) {
-                            outToClient.writeBytes(mapper.writeValueAsString(proxies));
-                            proxyLock.notifyAll();
+                        synchronized (systemsLock) {
+                            outToClient.writeBytes(mapper.writeValueAsString(systems));
+                            systemsLock.notifyAll();
                         }
                         break;
 
@@ -127,18 +126,18 @@ public class Main {
                     }
                 }
             } catch (JsonProcessingException ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(UITransferAgent.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(UITransferAgent.class.getName()).log(Level.SEVERE, null, ex);
             } catch (Exception ex) {
-                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(UITransferAgent.class.getName()).log(Level.SEVERE, null, ex);
             } finally {
                 try {
                     connectionSocket.close();
                 } catch (IOException ex) {
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(UITransferAgent.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (Exception ex) {
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+                    Logger.getLogger(UITransferAgent.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         }
